@@ -1,13 +1,11 @@
-from flask import request, make_response
+from flask import request, make_response, render_template
 from db.execution import execute
-from src.helpers.utils import validate_request_data
-from src.schemas import schema
 
 def login_user():
     try:
-        user_details = request.get_json()
-        if"id" in user_details and type(user_details['id']) is int and user_details['id']>0:
-            result = execute(f"SELECT name from users WHERE id ='{user_details['id']}';")
+        id = request.form.get("id")
+        if id and int(id)>0:
+            result = execute(f"SELECT name from users WHERE id ={id};")
             if result:
                 return make_response("log in success", 200)
             else:
@@ -18,13 +16,22 @@ def login_user():
 
 def register_user():
     try:
-        user_details = request.get_json()
-        validate_request_data(schema.register_schema, user_details)
-        execute(f"INSERT INTO users(id,name,type) VALUES ({user_details['id']},'{user_details['name']}','{user_details['type']}');")
-        result = execute(f"SELECT id from users WHERE name = '{user_details['name']}';")
-        if result:
-            return make_response(str(result[0]['id']), 200)
-        else:
-            return make_response("something went wrong in the registration", 1000)
+        id = request.form.get("id")
+        name = request.form.get("name")
+        type = request.form.get("type")
+        if id and int(id)>0 and name.isalpha() and name and type and type.isalpha():
+            execute(f"INSERT INTO users(id,name,type) VALUES ({id},'{name}','{type}');")
+            result = execute(f"SELECT id from users WHERE name = '{name}';")
+            if result:
+                return make_response(str(result[0]['id']), 200)
+            else:
+                return make_response("something went wrong in the registration", 1000)
+        else: raise Exception("id and name and type are required")
     except Exception as e:
         return make_response("something went wrong"+e.__str__(), 1000)
+def render_login():
+    return render_template("login.html")
+def render_hello():
+    return render_template("index.html")
+def render_register():
+    return render_template("register.html")
